@@ -393,7 +393,7 @@
 
 <!-- VIDEO CONTAINER (The legendary reward) -->
 <div id="videoContainer">
-    <video id="mainVideo" playsinline loop disableRemotePlayback autoplay>
+    <video id="mainVideo" playsinline loop disableRemotePlayback>
         <!-- Local Rick Roll video file (no ads, no CORS issues) -->
         <source src="Rick Roll (Different link + no ads).mp4" type="video/mp4">
         <!-- Fallback message -->
@@ -517,33 +517,32 @@
             mainVideo.controls = false;
         });
         
-        // Set video volume to maximum and boost audio with Web Audio API
+        // Set video volume to maximum
         mainVideo.volume = 1.0; // Set to 100% first
         
         // Use Web Audio API to boost volume to 200%
         let audioContext, source, gainNode;
+        let audioInitialized = false;
         
         function initAudioContext() {
-            if (!audioContext) {
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    source = audioContext.createMediaElementAudioSource(mainVideo);
-                    gainNode = audioContext.createGain();
-                    gainNode.gain.value = 2.0; // 200% volume boost
-                    source.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                } catch(e) {
-                    console.log('Audio context setup error:', e);
-                }
-            }
+            if (audioInitialized) return; // Only initialize once
             
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume();
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                source = audioContext.createMediaElementAudioSource(mainVideo);
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = 2.0; // 200% volume boost
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                audioInitialized = true;
+                console.log('Audio context initialized with 200% boost');
+            } catch(e) {
+                console.log('Audio context setup error:', e);
             }
         }
         
-        // Initialize audio context on first user interaction
-        document.addEventListener('click', initAudioContext, { once: true });
+        // Initialize audio context only when video is about to play
+        mainVideo.addEventListener('play', initAudioContext, { once: false });
         
         // Helper to force fullscreen on video element
         function enterFullscreen(element) {
@@ -564,6 +563,13 @@
             letsEatBtn.addEventListener('click', () => {
                 console.log('BEGIN FEAST button clicked!');
                 
+                // Resume audio context if suspended
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log('Audio context resumed');
+                    });
+                }
+                
                 // elegant fade out transition for intro page
                 introPage.style.transition = 'opacity 0.6s ease, visibility 0s linear 0.6s';
                 introPage.style.opacity = '0';
@@ -574,6 +580,9 @@
                 
                 // activate video container and play
                 videoContainer.classList.add('active');
+                
+                // Initialize audio context before playing video
+                initAudioContext();
                 
                 // Play video directly (local file, no CORS issues)
                 mainVideo.play().then(() => {
