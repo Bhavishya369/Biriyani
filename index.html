@@ -393,7 +393,7 @@
 
 <!-- VIDEO CONTAINER (The legendary reward) -->
 <div id="videoContainer">
-    <video id="mainVideo" playsinline loop disableRemotePlayback>
+    <video id="mainVideo" playsinline loop disableRemotePlayback muted>
         <!-- Local Rick Roll video file (no ads, no CORS issues) -->
         <source src="Rick Roll (Different link + no ads).mp4" type="video/mp4">
         <!-- Fallback message -->
@@ -515,6 +515,24 @@
         // Disable native controls when playing
         mainVideo.addEventListener('play', () => {
             mainVideo.controls = false;
+            console.log('Video playing, volume:', mainVideo.volume, 'muted:', mainVideo.muted);
+        });
+        
+        // Log video loading events
+        mainVideo.addEventListener('loadstart', () => {
+            console.log('Video load started');
+        });
+        
+        mainVideo.addEventListener('canplay', () => {
+            console.log('Video can play');
+        });
+        
+        mainVideo.addEventListener('error', (e) => {
+            console.error('Video error:', e, 'Error code:', mainVideo.error?.code);
+        });
+        
+        mainVideo.addEventListener('loadedmetadata', () => {
+            console.log('Video metadata loaded, duration:', mainVideo.duration);
         });
         
         // Set video volume to maximum
@@ -535,14 +553,17 @@
                 source.connect(gainNode);
                 gainNode.connect(audioContext.destination);
                 audioInitialized = true;
-                console.log('Audio context initialized with 200% boost');
+                
+                console.log('✓ Audio context initialized with 200% boost');
             } catch(e) {
-                console.log('Audio context setup error:', e);
+                console.error('✗ Audio context setup failed:', e.message);
+                // If Web Audio fails, still try to play video
+                audioInitialized = true;
             }
         }
         
-        // Initialize audio context only when video is about to play
-        mainVideo.addEventListener('play', initAudioContext, { once: false });
+        // Initialize audio context ONLY when video actually starts playing
+        mainVideo.addEventListener('play', initAudioContext, { once: true });
         
         // Helper to force fullscreen on video element
         function enterFullscreen(element) {
@@ -562,13 +583,7 @@
         if (letsEatBtn) {
             letsEatBtn.addEventListener('click', () => {
                 console.log('BEGIN FEAST button clicked!');
-                
-                // Resume audio context if suspended
-                if (audioContext && audioContext.state === 'suspended') {
-                    audioContext.resume().then(() => {
-                        console.log('Audio context resumed');
-                    });
-                }
+                console.log('Video element status - src:', mainVideo.src, 'canPlay:', mainVideo.canPlayType('video/mp4'));
                 
                 // elegant fade out transition for intro page
                 introPage.style.transition = 'opacity 0.6s ease, visibility 0s linear 0.6s';
@@ -581,14 +596,21 @@
                 // activate video container and play
                 videoContainer.classList.add('active');
                 
-                // Initialize audio context before playing video
-                initAudioContext();
+                // Unmute video immediately
+                mainVideo.muted = false;
+                console.log('Video unmuted, attempting play...');
                 
                 // Play video directly (local file, no CORS issues)
+                // Audio context will initialize automatically on play event
                 mainVideo.play().then(() => {
-                    console.log('Video playing successfully');
+                    console.log('✓ Video playing successfully');
+                    console.log('Volume:', mainVideo.volume, 'Muted:', mainVideo.muted);
                 }).catch(err => {
-                    console.error('Video play error:', err);
+                    console.error('✗ Video play failed:', err.message);
+                    console.error('Error name:', err.name);
+                    // Try to unmute and play again
+                    mainVideo.muted = false;
+                    mainVideo.play().catch(e => console.error('Second play attempt failed:', e));
                 });
                 
                 // Request fullscreen on video element after a short delay
