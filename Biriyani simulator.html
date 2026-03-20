@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Biryani Royale | Liquid Glass Biryani Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0508;
+            font-family: 'SF Pro Display', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        /* ========= DYNAMIC PREMIUM BACKGROUND ========= */
+        .dynamic-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: radial-gradient(circle at 20% 30%, #2e1a1a, #0d0709);
+            overflow: hidden;
+        }
+
+        /* animated grain texture for premium feel */
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><path fill="rgba(255,215,150,0.03)" d="M0 0h200v200H0z"/><circle cx="30" cy="40" r="1.2" fill="rgba(255,180,60,0.2)"/><circle cx="120" cy="85" r="1.5" fill="rgba(220,80,30,0.25)"/><circle cx="170" cy="160" r="1" fill="rgba(255,200,100,0.2)"/><circle cx="55" cy="180" r="1.3" fill="rgba(240,120,20,0.2)"/><circle cx="90" cy="20" r="1.1" fill="rgba(250,150,40,0.2)"/><circle cx="145" cy="130" r="1.4" fill="rgba(210,70,25,0.2)"/></svg>');
+            background-repeat: repeat;
+            background-size: 180px;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: -1;
+            mix-blend-mode: overlay;
+        }
+
+        /* floating spice particles (dynamic) */
+        .spice-particle {
+            position: absolute;
+            background: radial-gradient(circle, #f5b042, #c25d1a);
+            border-radius: 50%;
+            filter: blur(2px);
+            opacity: 0.3;
+            animation: floatSpice 18s infinite ease-in-out;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes floatSpice {
+            0% { transform: translateY(0vh) translateX(0) rotate(0deg); opacity: 0.2; }
+            50% { transform: translateY(-12vh) translateX(20px) rotate(10deg); opacity: 0.45; }
+            100% { transform: translateY(0vh) translateX(0) rotate(0deg); opacity: 0.2; }
+        }
+
+        /* warm light sweep (dynamic glow) */
+        .light-sweep {
+            position: fixed;
+            top: 0;
+            left: -40%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(95deg, transparent, rgba(245, 158, 11, 0.08), rgba(220, 38, 38, 0.05), transparent);
+            transform: skewX(-20deg);
+            animation: sweepGlow 14s infinite linear;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes sweepGlow {
+            0% { transform: translateX(-100%) skewX(-20deg); }
+            100% { transform: translateX(300%) skewX(-20deg); }
+        }
+
+        /* golden shimmer overlay */
+        .gold-shimmer {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 70%, rgba(251,191,36,0.08), transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+            animation: pulseGlow 4s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+
+        /* ========= LIQUID GLASS BALL (GLASS MORPHISM + WATER EFFECT) ========= */
+        .liquid-glass-ball {
+            position: fixed;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(255, 248, 225, 0.18);
+            backdrop-filter: blur(18px) saturate(180%);
+            -webkit-backdrop-filter: blur(18px) saturate(180%);
+            border: 1px solid rgba(255, 245, 200, 0.45);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2), 
+                        0 0 0 1px rgba(255,215,140,0.2) inset,
+                        0 0 40px rgba(251,191,36,0.2);
+            pointer-events: none;
+            z-index: 5;
+            transition: transform 4s cubic-bezier(0.34, 1.1, 0.55, 1);
+            will-change: transform;
+            animation: subtleFloat 6s infinite alternate ease-in-out;
+        }
+
+        /* inner liquid shimmer */
+        .liquid-glass-ball::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 35%;
+            height: 25%;
+            background: radial-gradient(circle, rgba(255,255,210,0.7), rgba(255,220,120,0.2));
+            border-radius: 50%;
+            filter: blur(8px);
+            opacity: 0.6;
+            animation: innerShine 4s infinite alternate;
+        }
+
+        .liquid-glass-ball::after {
+            content: '';
+            position: absolute;
+            bottom: 12%;
+            right: 18%;
+            width: 28%;
+            height: 22%;
+            background: radial-gradient(circle, rgba(200,230,255,0.5), rgba(100,150,200,0.1));
+            border-radius: 50%;
+            filter: blur(10px);
+            opacity: 0.5;
+            animation: innerShineReverse 5s infinite alternate;
+        }
+
+        @keyframes innerShine {
+            0% { transform: translateX(-5px) translateY(-3px); opacity: 0.4; }
+            100% { transform: translateX(8px) translateY(6px); opacity: 0.8; }
+        }
+
+        @keyframes innerShineReverse {
+            0% { transform: translateX(3px) translateY(2px); opacity: 0.3; }
+            100% { transform: translateX(-10px) translateY(-5px); opacity: 0.7; }
+        }
+
+        @keyframes subtleFloat {
+            0% { transform: scale(1) translateY(0px); }
+            100% { transform: scale(1.02) translateY(-12px); }
+        }
+
+        /* Responsive ball size */
+        @media (max-width: 700px) {
+            .liquid-glass-ball {
+                width: 180px;
+                height: 180px;
+            }
+        }
+
+        /* INTRO PAGE PREMIUM STYLING */
+        #introPage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            background: rgba(10, 5, 8, 0.5);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .intro-card {
+            background: rgba(15, 8, 12, 0.65);
+            backdrop-filter: blur(20px);
+            border-radius: 64px;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            box-shadow: 0 35px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(251,191,36,0.15) inset, 0 0 30px rgba(220,38,38,0.2);
+            padding: 40px 48px;
+            max-width: 620px;
+            width: 88%;
+            text-align: center;
+            transition: transform 0.4s ease;
+            animation: cardFloat 1.2s ease-out;
+            z-index: 110;
+        }
+
+        @keyframes cardFloat {
+            0% { opacity: 0; transform: scale(0.96) translateY(40px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .badge {
+            font-size: 0.85rem;
+            letter-spacing: 3px;
+            color: #fbbf24;
+            font-weight: 600;
+            text-transform: uppercase;
+            background: rgba(251,191,36,0.12);
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 60px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(4px);
+            border: 0.5px solid rgba(251,191,36,0.4);
+        }
+
+        h1 {
+            font-size: clamp(2.8rem, 8vw, 5.2rem);
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFD966, #F97316, #EF4444);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.02em;
+            margin: 0 0 15px 0;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .subhead {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #fcd34d;
+            margin-bottom: 12px;
+            letter-spacing: -0.2px;
+        }
+
+        .description {
+            font-size: 1rem;
+            line-height: 1.55;
+            color: #ffedd5;
+            margin: 18px 0 45px;
+            font-weight: 350;
+            opacity: 0.9;
+        }
+
+        .premium-btn {
+            background: linear-gradient(105deg, rgba(220,38,38,0.2), rgba(245,158,11,0.25));
+            border: 1px solid rgba(251,191,36,0.6);
+            padding: 18px 42px;
+            border-radius: 100px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            color: #fff9e8;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            box-shadow: 0 10px 20px -5px rgba(220,38,38,0.3);
+            font-family: inherit;
+        }
+
+        .premium-btn:hover {
+            transform: scale(1.02) translateY(-4px);
+            border-color: #fbbf24;
+            background: linear-gradient(105deg, rgba(220,38,38,0.35), rgba(245,158,11,0.4));
+            box-shadow: 0 25px 35px -12px rgba(220,38,38,0.5);
+            gap: 18px;
+        }
+
+        .premium-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-icon {
+            font-size: 1.4rem;
+            transition: transform 0.25s;
+        }
+
+        .premium-btn:hover .btn-icon {
+            transform: translateX(6px);
+        }
+
+        /* VIDEO CONTAINER (fullscreen rickroll luxury) */
+        #videoContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000000;
+            z-index: 200;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #1a0c0c, #000000);
+        }
+
+        #videoContainer.active {
+            display: flex;
+        }
+
+        #mainVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 70px rgba(251,191,36,0.2);
+        }
+
+        /* Hide all controls + context menu */
+        video::-webkit-media-controls {
+            display: none !important;
+        }
+        video::-webkit-media-controls-enclosure {
+            display: none !important;
+        }
+
+        /* subtle exit hint (optional but elegant) */
+        .exit-hint {
+            position: fixed;
+            bottom: 20px;
+            right: 24px;
+            font-size: 11px;
+            color: rgba(251,191,36,0.5);
+            background: rgba(0,0,0,0.4);
+            padding: 6px 14px;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+            z-index: 250;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            font-family: monospace;
+        }
+
+        @media (max-width: 600px) {
+            .intro-card {
+                padding: 32px 24px;
+                border-radius: 48px;
+            }
+            .premium-btn {
+                padding: 14px 32px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- PREMIUM DYNAMIC BACKGROUND (never black, always rich) -->
+<div class="dynamic-bg"></div>
+<div class="grain-overlay"></div>
+<div class="light-sweep"></div>
+<div class="gold-shimmer"></div>
+
+<!-- LIQUID GLASS BALL - MOVING RANDOMLY IN BACKGROUND -->
+<div id="liquidGlassBall" class="liquid-glass-ball"></div>
+
+<!-- floating spice particles (generated dynamically) -->
+<div id="spiceContainer"></div>
+
+<!-- Hidden dummy image (legacy placeholder) -->
+<img id="sourceImage" style="display:none;" alt="spice" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle fill='%23f5a623' cx='50' cy='50' r='45'/%3E%3C/svg%3E">
+
+<!-- INTRO PAGE -->
+<div id="introPage">
+    <div class="intro-card">
+        <div class="badge">✦ ARTISANAL EXPERIENCE ✦</div>
+        <h1>Biryani<br>Eating Simulator</h1>
+        <div class="subhead">Master the Art of Indulgence</div>
+        <div class="description">
+            Sink your spoon into perfectly layered basmati rice,<br>
+            succulent spiced meat, saffron essence & caramelized onions.<br>
+            A cinematic feast for the senses.
+        </div>
+        <button id="letsEatBtn" class="premium-btn">
+            <span class="btn-text">BEGIN FEAST</span>
+            <span class="btn-icon">🍚➡️</span>
+        </button>
+    </div>
+</div>
+
+<!-- VIDEO CONTAINER (The legendary reward) -->
+<div id="videoContainer">
+    <video id="mainVideo" playsinline loop disableRemotePlayback autoplay>
+        <!-- Local Rick Roll video file (no ads, no CORS issues) -->
+        <source src="Rick Roll (Different link + no ads).mp4" type="video/mp4">
+        <!-- Fallback message -->
+        Your browser does not support the video tag.
+    </video>
+    <div class="exit-hint">🎬 cinematic mode · press ESC to exit fullscreen</div>
+</div>
+
+<script>
+    (function() {
+        // ========= 1. DYNAMIC PREMIUM BACKGROUND: SPICE PARTICLES =========
+        const spiceContainer = document.getElementById('spiceContainer');
+        if(spiceContainer) {
+            const particleCount = 48;
+            for(let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('spice-particle');
+                const size = Math.random() * 18 + 5;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                const duration = 15 + Math.random() * 25;
+                const delay = Math.random() * 15;
+                particle.style.animation = `floatSpice ${duration}s infinite ease-in-out`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.opacity = 0.2 + Math.random() * 0.4;
+                particle.style.background = `radial-gradient(circle, #fbbf24, #dc2626)`;
+                particle.style.filter = `blur(${Math.random() * 4 + 1}px)`;
+                spiceContainer.appendChild(particle);
+            }
+        }
+
+        // Additional floating saffron threads effect: tiny dots drifting
+        const dynamicBg = document.querySelector('.dynamic-bg');
+        for(let i=0; i<30; i++) {
+            let thread = document.createElement('div');
+            thread.style.position = 'absolute';
+            thread.style.width = '2px';
+            thread.style.height = `${Math.random() * 25 + 6}px`;
+            thread.style.background = 'linear-gradient(180deg, #f5b042, #e07c2c)';
+            thread.style.left = Math.random() * 100 + '%';
+            thread.style.top = Math.random() * 100 + '%';
+            thread.style.opacity = 0.2;
+            thread.style.filter = 'blur(1px)';
+            thread.style.borderRadius = '40%';
+            thread.style.transform = `rotate(${Math.random() * 360}deg)`;
+            thread.style.animation = `floatSpice ${Math.random() * 20 + 12}s infinite alternate`;
+            thread.style.pointerEvents = 'none';
+            dynamicBg.appendChild(thread);
+        }
+
+        // ========= 2. LIQUID GLASS BALL RANDOM MOVEMENT =========
+        const glassBall = document.getElementById('liquidGlassBall');
+        let targetX = 0, targetY = 0;
+        
+        // Function to get random position within safe margins (so ball stays fully visible)
+        function getRandomPosition() {
+            const ballRect = glassBall.getBoundingClientRect();
+            const ballWidth = ballRect.width;
+            const ballHeight = ballRect.height;
+            const maxX = window.innerWidth - ballWidth;
+            const maxY = window.innerHeight - ballHeight;
+            const margin = 25;
+            const randomX = Math.min(maxX - margin, Math.max(margin, Math.random() * (maxX - margin*2) + margin));
+            const randomY = Math.min(maxY - margin, Math.max(margin, Math.random() * (maxY - margin*2) + margin));
+            return { x: randomX, y: randomY };
+        }
+        
+        // Update ball position with smooth transition
+        function moveBallToRandom() {
+            const { x, y } = getRandomPosition();
+            targetX = x;
+            targetY = y;
+            glassBall.style.transform = `translate(${targetX}px, ${targetY}px)`;
+        }
+        
+        // Initial random placement
+        function setInitialPosition() {
+            const { x, y } = getRandomPosition();
+            glassBall.style.transform = `translate(${x}px, ${y}px)`;
+            glassBall.style.transition = 'transform 3.8s cubic-bezier(0.2, 0.9, 0.4, 1.2)';
+        }
+        
+        setInitialPosition();
+        
+        // Move ball every 5.2 seconds for organic drift
+        let moveInterval = setInterval(() => {
+            moveBallToRandom();
+        }, 5200);
+        
+        // Recalculate on window resize to avoid ball going out of bounds
+        window.addEventListener('resize', () => {
+            moveBallToRandom();
+        });
+        
+        // ========= 3. VIDEO & RICKROLL LOGIC (simplified for local file) =========
+        const letsEatBtn = document.getElementById('letsEatBtn');
+        const introPage = document.getElementById('introPage');
+        const videoContainer = document.getElementById('videoContainer');
+        const mainVideo = document.getElementById('mainVideo');
+        
+        console.log('Button found:', !!letsEatBtn);
+        console.log('Intro page found:', !!introPage);
+        console.log('Video container found:', !!videoContainer);
+        console.log('Video element found:', !!mainVideo);
+        
+        // Check if button exists before adding listener
+        if (!letsEatBtn) {
+            console.error('ERROR: Button with ID "letsEatBtn" not found!');
+        }
+        
+        // prevent any context menu on video
+        mainVideo.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Disable native controls when playing
+        mainVideo.addEventListener('play', () => {
+            mainVideo.controls = false;
+        });
+        
+        // Set video volume to maximum and boost audio with Web Audio API
+        mainVideo.volume = 1.0; // Set to 100% first
+        
+        // Use Web Audio API to boost volume to 200%
+        let audioContext, source, gainNode;
+        
+        function initAudioContext() {
+            if (!audioContext) {
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    source = audioContext.createMediaElementAudioSource(mainVideo);
+                    gainNode = audioContext.createGain();
+                    gainNode.gain.value = 2.0; // 200% volume boost
+                    source.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                } catch(e) {
+                    console.log('Audio context setup error:', e);
+                }
+            }
+            
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', initAudioContext, { once: true });
+        
+        // Helper to force fullscreen on video element
+        function enterFullscreen(element) {
+            if(!element) return;
+            if(element.requestFullscreen) {
+                element.requestFullscreen().catch(err => console.log("fullscreen request", err));
+            } else if(element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if(element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+            } else if(element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        }
+        
+        // Button click: transition to rickroll experience
+        if (letsEatBtn) {
+            letsEatBtn.addEventListener('click', () => {
+                console.log('BEGIN FEAST button clicked!');
+                
+                // elegant fade out transition for intro page
+                introPage.style.transition = 'opacity 0.6s ease, visibility 0s linear 0.6s';
+                introPage.style.opacity = '0';
+                setTimeout(() => {
+                    introPage.style.display = 'none';
+                    introPage.style.visibility = 'hidden';
+                }, 580);
+                
+                // activate video container and play
+                videoContainer.classList.add('active');
+                
+                // Play video directly (local file, no CORS issues)
+                mainVideo.play().then(() => {
+                    console.log('Video playing successfully');
+                }).catch(err => {
+                    console.error('Video play error:', err);
+                });
+                
+                // Request fullscreen on video element after a short delay
+                setTimeout(() => {
+                    enterFullscreen(mainVideo);
+                }, 300);
+            });
+        } else {
+            console.error('Cannot attach click listener - button not found');
+        }
+        
+        // Handle fullscreen change event (optional)
+        document.addEventListener('fullscreenchange', () => {
+            if(!document.fullscreenElement && videoContainer.classList.contains('active')) {
+                // user exited fullscreen, but video continues playing
+            }
+        });
+        
+        // Add extra cinema pulse effect for video container
+        const style = document.createElement('style');
+        style.textContent = `
+            #videoContainer.active::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: radial-gradient(circle at 50% 50%, rgba(251,191,36,0.12) 0%, transparent 70%);
+                z-index: 5;
+                animation: cinemaPulse 2.5s infinite alternate;
+            }
+            @keyframes cinemaPulse {
+                0% { opacity: 0.3; }
+                100% { opacity: 0.8; }
+            }
+            #mainVideo {
+                transition: filter 0.3s;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        const btnStyle = document.createElement('style');
+        btnStyle.textContent = `
+            .premium-btn {
+                position: relative;
+                overflow: hidden;
+            }
+            .premium-btn::after {
+                content: '';
+                position: absolute;
+                top: var(--y, 50%);
+                left: var(--x, 50%);
+                width: 0px;
+                height: 0px;
+                background: radial-gradient(circle, rgba(251,191,36,0.6), transparent);
+                transform: translate(-50%, -50%);
+                border-radius: 50%;
+                transition: width 0.5s ease, height 0.5s ease;
+                pointer-events: none;
+            }
+            .premium-btn:active::after {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+                transition: 0s;
+            }
+        `;
+        document.head.appendChild(btnStyle);
+        
+        // Dynamic background gradient shift for extra richness
+        function animateBackgroundShift() {
+            const dynamicDiv = document.querySelector('.dynamic-bg');
+            if(dynamicDiv && !videoContainer.classList.contains('active')) {
+                const t = Date.now() / 8000;
+                const r = 40 + Math.sin(t) * 5;
+                const g = 20 + Math.sin(t + 2) * 6;
+                const b = 25 + Math.cos(t + 1) * 7;
+                dynamicDiv.style.background = `radial-gradient(circle at 30% 40%, rgba(${r+15}, ${g+8}, ${b-5}, 0.9), #0c0608)`;
+            } else if(dynamicDiv) {
+                dynamicDiv.style.background = `radial-gradient(circle at 60% 50%, #221010, #030101)`;
+            }
+            requestAnimationFrame(animateBackgroundShift);
+        }
+        animateBackgroundShift();
+        
+        // Steam effect for background
+        const steamDiv = document.createElement('div');
+        steamDiv.style.position = 'fixed';
+        steamDiv.style.bottom = '0';
+        steamDiv.style.left = '0';
+        steamDiv.style.width = '100%';
+        steamDiv.style.height = '100%';
+        steamDiv.style.pointerEvents = 'none';
+        steamDiv.style.zIndex = '0';
+        steamDiv.style.background = 'radial-gradient(ellipse at 50% 85%, rgba(255,210,110,0.08), transparent 70%)';
+        steamDiv.style.animation = 'pulseGlow 4s infinite alternate';
+        document.body.appendChild(steamDiv);
+        
+        // mobile touch fullscreen support
+        if('ontouchstart' in window) {
+            mainVideo.addEventListener('touchstart', (e) => {
+                if(videoContainer.classList.contains('active') && !document.fullscreenElement) {
+                    enterFullscreen(mainVideo);
+                }
+            });
+        }
+        
+        console.log("🍛 Biryani Simulator Premium — Liquid glass ball drifts randomly. Rickroll video ready (multiple sources).");
+    })();
+</script>
+</body>
+</html>
